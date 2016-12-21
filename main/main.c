@@ -23,7 +23,7 @@ void rainbow(void *pvParameters)
 {
   const uint8_t anim_step = 10;
   const uint8_t anim_max = 250;
-  const uint8_t pixel_count = 9; // Number of your "pixels"
+  const uint8_t pixel_count = 8; // Number of your "pixels"
   const uint8_t delay = 25; // duration between color changes
   rgbVal color = makeRGBVal(anim_max, 0, 0);
   uint8_t step = 0;

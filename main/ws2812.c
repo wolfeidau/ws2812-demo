@@ -20,7 +20,12 @@
 #include <stdlib.h>
 
 #define ETS_RMT_CTRL_INUM	18
-#define ESP_RMT_CTRL_DISABLE	ESP_RMT_CTRL_DIABLE /* Typo in esp_intr.h */
+
+#define ESP_RMT_CTRL_ENABLE() \
+    ESP_INTR_ENABLE(ETS_RMT_CTRL_INUM)
+
+#define ESP_RMT_CTRL_DIABLE() \
+    ESP_INTR_DISABLE(ETS_RMT_CTRL_INUM)
 
 #define WS2812_CYCLE	225 /* nanoseconds */
 #define RESET		50000 /* nanoseconds */
@@ -83,14 +88,14 @@ void ws2812_copy()
     if (i + ws2812_pos < ws2812_len) {
       bit = ws2812_buffer[i + ws2812_pos];
       for (j = 0; j < 8; j++, bit <<= 1) {
-	RMTMEM.chan[RMTCHANNEL].data[j + i * 8 + offset].val =
+	RMTMEM.chan[RMTCHANNEL].data32[j + i * 8 + offset].val =
 	  ws2812_bits[(bit >> 7) & 0x01].val;
       }
       if (i + ws2812_pos == ws2812_len - 1)
-	RMTMEM.chan[RMTCHANNEL].data[7 + i * 8 + offset].duration1 += RESET / DURATION;
+	RMTMEM.chan[RMTCHANNEL].data32[7 + i * 8 + offset].duration1 += RESET / DURATION;
     }
     else
-      RMTMEM.chan[RMTCHANNEL].data[i * 8 + offset].val = 0;
+      RMTMEM.chan[RMTCHANNEL].data32[i * 8 + offset].val = 0;
   }
 
   ws2812_pos += len;
@@ -110,7 +115,7 @@ void ws2812_handleInterrupt(void *arg)
     xSemaphoreGiveFromISR(ws2812_sem, &taskAwoken);
     RMT.int_clr.ch0_tx_end = 1;
   }
-  
+
   return;
 }
 
@@ -166,14 +171,14 @@ void ws2812_setColors(unsigned int length, rgbVal *array)
     ws2812_copy();
 
   ws2812_sem = xSemaphoreCreateBinary();
-  
+
   RMT.conf_ch[RMTCHANNEL].conf1.mem_rd_rst = 1;
   RMT.conf_ch[RMTCHANNEL].conf1.tx_start = 1;
 
   xSemaphoreTake(ws2812_sem, portMAX_DELAY);
   vSemaphoreDelete(ws2812_sem);
   ws2812_sem = NULL;
-  
+
   free(ws2812_buffer);
 
   return;
